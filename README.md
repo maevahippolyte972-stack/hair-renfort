@@ -36,6 +36,7 @@ Prérequis : Node ≥ 20, pnpm, une base PostgreSQL (UE en production, locale en
 
 ```bash
 pnpm install
+pnpm --filter @hair-renfort/shared build  # requis avant l'API/le web (voir note ci-dessous)
 
 # API
 cp apps/api/.env.example apps/api/.env   # renseigner DATABASE_URL
@@ -48,6 +49,12 @@ pnpm --filter @hair-renfort/api dev      # http://localhost:4000
 cp apps/web/.env.example apps/web/.env
 pnpm --filter @hair-renfort/web dev      # http://localhost:3000
 ```
+
+`packages/shared` est compilé (pas consommé en `.ts` brut) car l'API tourne sous Node en
+CommonJS : sans ce build, `apps/api` échoue au démarrage avec une erreur de résolution de
+module. `pnpm dev` à la racine (via Turborepo) le rebuild automatiquement ; en lançant
+`apps/api`/`apps/web` directement il faut le faire à la main après toute modification de
+`packages/shared`.
 
 ## Points de configuration à trancher par la fondatrice
 
