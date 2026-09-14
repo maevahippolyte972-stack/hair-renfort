@@ -1,7 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { AppShell } from "@/components/AppShell";
+import { Skeleton } from "@/components/Skeleton";
+import { useToast } from "@/components/Toast";
 import { authFetch } from "@/lib/session";
 import { ApiError } from "@/lib/api";
 
@@ -26,9 +29,9 @@ interface Need {
 }
 
 export default function PublierPage() {
-  const [myNeeds, setMyNeeds] = useState<Need[]>([]);
+  const toast = useToast();
+  const [myNeeds, setMyNeeds] = useState<Need[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   function loadMine() {
@@ -42,7 +45,6 @@ export default function PublierPage() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setSuccess(false);
     const form = new FormData(e.currentTarget);
 
     setLoading(true);
@@ -61,7 +63,7 @@ export default function PublierPage() {
           ],
         }),
       });
-      setSuccess(true);
+      toast("Besoin publié — visible dans le flux des freelances concernées.");
       (e.target as HTMLFormElement).reset();
       loadMine();
     } catch (err) {
@@ -110,7 +112,6 @@ export default function PublierPage() {
         </div>
 
         {error && <p className="text-sm text-bordeaux">{error}</p>}
-        {success && <p className="text-sm text-vert-confirmation">Besoin publié.</p>}
 
         <button type="submit" disabled={loading} className="w-full rounded-full bg-bordeaux px-4 py-2.5 text-sm text-ivoire">
           {loading ? "Publication…" : "Publier"}
@@ -119,25 +120,40 @@ export default function PublierPage() {
 
       <h2 className="mt-10 font-serif text-xl">Mes besoins publiés</h2>
       <div className="mt-4 space-y-3">
-        {myNeeds.map((n) => (
-          <div key={n.id} className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4">
-            <div className="flex items-center justify-between">
-              <p className="font-serif">{n.specialty.name}</p>
-              <span className="text-xs text-noir-chaud/60">{n.status}</span>
-            </div>
-            {n.slots[0] && (
-              <p className="mt-1 text-xs text-noir-chaud/60">
-                {new Date(n.slots[0].date).toLocaleDateString("fr-FR")} · {n.slots[0].heureDebut}–{n.slots[0].heureFin}
-              </p>
-            )}
-            {n.urgencyLevel !== "NORMAL" && (
-              <span className="mt-2 inline-block rounded-full bg-bordeaux/10 px-2.5 py-1 text-xs text-bordeaux">
-                {n.urgencyLevel === "TRES_URGENT" ? "Très urgent" : "Urgent"}
-              </span>
-            )}
-          </div>
-        ))}
-        {myNeeds.length === 0 && <p className="text-sm text-noir-chaud/60">Aucun besoin publié pour l&apos;instant.</p>}
+        {myNeeds === null && (
+          <>
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </>
+        )}
+        <AnimatePresence initial={false}>
+          {myNeeds?.map((n) => (
+            <motion.div
+              key={n.id}
+              layout
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4"
+            >
+              <div className="flex items-center justify-between">
+                <p className="font-serif">{n.specialty.name}</p>
+                <span className="text-xs text-noir-chaud/60">{n.status}</span>
+              </div>
+              {n.slots[0] && (
+                <p className="mt-1 text-xs text-noir-chaud/60">
+                  {new Date(n.slots[0].date).toLocaleDateString("fr-FR")} · {n.slots[0].heureDebut}–{n.slots[0].heureFin}
+                </p>
+              )}
+              {n.urgencyLevel !== "NORMAL" && (
+                <span className="mt-2 inline-block rounded-full bg-bordeaux/10 px-2.5 py-1 text-xs text-bordeaux">
+                  {n.urgencyLevel === "TRES_URGENT" ? "Très urgent" : "Urgent"}
+                </span>
+              )}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {myNeeds?.length === 0 && <p className="text-sm text-noir-chaud/60">Aucun besoin publié pour l&apos;instant.</p>}
       </div>
     </AppShell>
   );

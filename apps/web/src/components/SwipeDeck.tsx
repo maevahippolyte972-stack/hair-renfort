@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 
 export type SwipeDirection = "left" | "right";
-export type SwipeTrigger = { direction: SwipeDirection; token: number } | null;
+export type SwipeTrigger = { direction: SwipeDirection; token: number; itemId: string } | null;
 
 interface SwipeDeckProps<T> {
   /** Cartes restantes, la première étant celle du dessus. */
@@ -13,7 +13,11 @@ interface SwipeDeckProps<T> {
   renderCard: (item: T) => React.ReactNode;
   /** Appelé une fois l'animation de sortie terminée — c'est là qu'on déclenche l'appel API. */
   onSwiped: (item: T, direction: SwipeDirection) => void;
-  /** Déclenche un swipe programmatique de la carte du dessus (boutons ✕ / ♥). */
+  /**
+   * Déclenche un swipe programmatique (boutons ✕ / ♥), ciblé par `itemId` — jamais
+   * "la carte actuellement en haut", pour éviter qu'une carte promue au premier plan
+   * n'hérite par erreur d'un déclenchement déjà consommé par la précédente.
+   */
   trigger?: SwipeTrigger;
 }
 
@@ -23,16 +27,19 @@ export function SwipeDeck<T>({ items, keyOf, renderCard, onSwiped, trigger }: Sw
 
   return (
     <div className="relative aspect-[3/4] w-full">
-      {visible.map((item, stackIndex) => (
-        <StackCard
-          key={keyOf(item)}
-          stackIndex={stackIndex}
-          trigger={stackIndex === 0 ? trigger : null}
-          onSwiped={(direction) => onSwiped(item, direction)}
-        >
-          {renderCard(item)}
-        </StackCard>
-      ))}
+      {visible.map((item, stackIndex) => {
+        const id = keyOf(item);
+        return (
+          <StackCard
+            key={id}
+            stackIndex={stackIndex}
+            trigger={trigger && trigger.itemId === id ? trigger : null}
+            onSwiped={(direction) => onSwiped(item, direction)}
+          >
+            {renderCard(item)}
+          </StackCard>
+        );
+      })}
     </div>
   );
 }
@@ -58,11 +65,11 @@ function StackCard({
   const [lastToken, setLastToken] = useState<number | null>(null);
 
   useEffect(() => {
-    if (isTop && trigger && trigger.token !== lastToken) {
+    if (trigger && trigger.token !== lastToken) {
       setLastToken(trigger.token);
       setExiting(trigger.direction);
     }
-  }, [trigger, isTop, lastToken]);
+  }, [trigger, lastToken]);
 
   return (
     <motion.div
@@ -81,7 +88,7 @@ function StackCard({
       drag={isTop && !exiting ? "x" : false}
       dragElastic={0.7}
       dragConstraints={{ left: 0, right: 0 }}
-      whileDrag={{ cursor: "grabbing" }}
+      whileDrag={{ scale: 1.03, cursor: "grabbing" }}
       onDragEnd={(_, info) => {
         if (info.offset.x > 110 || info.velocity.x > 600) setExiting("right");
         else if (info.offset.x < -110 || info.velocity.x < -600) setExiting("left");
@@ -91,6 +98,15 @@ function StackCard({
 
       {isTop && !exiting && (
         <>
+          {/* Halo coloré : s'intensifie à mesure que le geste franchit le seuil OUI/NON. */}
+          <motion.div
+            style={{ opacity: likeOpacity }}
+            className="pointer-events-none absolute -inset-1 rounded-[2rem] ring-4 ring-vert-confirmation/70"
+          />
+          <motion.div
+            style={{ opacity: passOpacity }}
+            className="pointer-events-none absolute -inset-1 rounded-[2rem] ring-4 ring-bordeaux/70"
+          />
           <motion.div
             style={{ opacity: likeOpacity }}
             className="pointer-events-none absolute left-5 top-5 -rotate-12 rounded-xl border-[3px] border-vert-confirmation px-3 py-1 font-serif text-lg font-semibold text-vert-confirmation"

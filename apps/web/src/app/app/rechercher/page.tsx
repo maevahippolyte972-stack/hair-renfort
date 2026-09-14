@@ -2,6 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { Skeleton } from "@/components/Skeleton";
+import { useToast } from "@/components/Toast";
 import { authFetch } from "@/lib/session";
 import { ApiError } from "@/lib/api";
 
@@ -36,6 +38,7 @@ const SPECIALITES = [
 ];
 
 export default function RechercherPage() {
+  const toast = useToast();
   const [results, setResults] = useState<FreelanceResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,12 +69,13 @@ export default function RechercherPage() {
     }
   }
 
-  async function addFavorite(freelanceId: string) {
+  async function addFavorite(freelanceId: string, prenom: string) {
     try {
       await authFetch(`/favorites/${freelanceId}`, { method: "POST" });
       setFavorited((prev) => new Set(prev).add(freelanceId));
-    } catch {
-      // silencieux : l'action reste tentable à nouveau
+      toast(`${prenom} ajoutée à vos favoris`);
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : "Une erreur est survenue.", "error");
     }
   }
 
@@ -122,7 +126,10 @@ export default function RechercherPage() {
       {error && <p className="mt-4 text-sm text-bordeaux">{error}</p>}
 
       <div className="mt-6 space-y-3">
-        {results?.map((f) => (
+        {loading &&
+          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
+        {!loading &&
+          results?.map((f) => (
           <div key={f.id} className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4">
             <div className="flex items-start justify-between">
               <div>
@@ -149,7 +156,7 @@ export default function RechercherPage() {
               )}
             </div>
             <button
-              onClick={() => addFavorite(f.id)}
+              onClick={() => addFavorite(f.id, f.prenom)}
               disabled={favorited.has(f.id)}
               className="mt-3 rounded-full border border-laiton px-4 py-1.5 text-xs text-laiton disabled:opacity-40"
             >

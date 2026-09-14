@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { authFetch } from "@/lib/session";
 import { SwipeCard } from "@/components/SwipeCard";
 import { SwipeDeck, type SwipeDirection, type SwipeTrigger } from "@/components/SwipeDeck";
+import { Skeleton } from "@/components/Skeleton";
+import { useToast } from "@/components/Toast";
 import { ApiError } from "@/lib/api";
 
 interface NeedCard {
@@ -28,6 +30,7 @@ const URGENCY_LABEL: Record<NeedCard["urgencyLevel"], string | null> = {
 };
 
 export function FreelanceDiscover() {
+  const toast = useToast();
   const [needs, setNeeds] = useState<NeedCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,14 +52,15 @@ export function FreelanceDiscover() {
         method: "POST",
         body: JSON.stringify({ action: direction === "right" ? "LIKED" : "PASSED" }),
       });
+      if (direction === "right") toast(`Candidature envoyée à ${need.salon.raisonSociale}`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Une erreur est survenue.");
+      toast(err instanceof ApiError ? err.message : "Une erreur est survenue.", "error");
     }
   }
 
   function act(direction: SwipeDirection) {
     if (needs.length === 0) return;
-    setTrigger({ direction, token: Date.now() });
+    setTrigger({ direction, token: Date.now(), itemId: needs[0].id });
   }
 
   function undo() {
@@ -66,7 +70,15 @@ export function FreelanceDiscover() {
     setNeeds((prev) => [last, ...prev]);
   }
 
-  if (loading) return <p className="text-sm text-noir-chaud/60">Chargement des missions…</p>;
+  if (loading) {
+    return (
+      <div>
+        <p className="text-sm text-noir-chaud/60">Missions disponibles</p>
+        <h1 className="font-serif text-3xl">À proximité</h1>
+        <Skeleton className="mt-6 aspect-[3/4] w-full" />
+      </div>
+    );
+  }
 
   return (
     <div>

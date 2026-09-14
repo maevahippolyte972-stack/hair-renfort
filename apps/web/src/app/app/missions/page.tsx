@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { Skeleton } from "@/components/Skeleton";
+import { useToast } from "@/components/Toast";
 import { authFetch } from "@/lib/session";
 import { ApiError } from "@/lib/api";
 
@@ -26,7 +28,8 @@ const STATUS_LABEL: Record<Assignment["status"], string> = {
 };
 
 export default function MissionsPage() {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const toast = useToast();
+  const [assignments, setAssignments] = useState<Assignment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function load() {
@@ -38,18 +41,28 @@ export default function MissionsPage() {
   useEffect(load, []);
 
   async function valider(id: string) {
-    await authFetch(`/missions/assignments/${id}/valider`, { method: "POST" });
-    load();
+    try {
+      await authFetch(`/missions/assignments/${id}/valider`, { method: "POST" });
+      toast("Mission marquée comme terminée de votre côté.");
+      load();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : "Une erreur est survenue.", "error");
+    }
   }
 
   async function annuler(id: string) {
     const reason = window.prompt("Motif de l'annulation (obligatoire) :");
     if (!reason) return;
-    await authFetch(`/missions/assignments/${id}/annuler`, {
-      method: "POST",
-      body: JSON.stringify({ reason }),
-    });
-    load();
+    try {
+      await authFetch(`/missions/assignments/${id}/annuler`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      });
+      toast("Mission annulée — votre taux de fiabilité a été recalculé.");
+      load();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : "Une erreur est survenue.", "error");
+    }
   }
 
   return (
@@ -60,7 +73,13 @@ export default function MissionsPage() {
       {error && <p className="mt-4 text-sm text-bordeaux">{error}</p>}
 
       <div className="mt-6 space-y-3">
-        {assignments.map((a) => (
+        {assignments === null && (
+          <>
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </>
+        )}
+        {assignments?.map((a) => (
           <div key={a.id} className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4">
             <div className="flex items-center justify-between">
               <p className="font-serif text-lg">{a.missionNeed.specialty.name}</p>
@@ -92,7 +111,7 @@ export default function MissionsPage() {
             )}
           </div>
         ))}
-        {assignments.length === 0 && <p className="text-sm text-noir-chaud/60">Aucune mission pour l&apos;instant.</p>}
+        {assignments?.length === 0 && <p className="text-sm text-noir-chaud/60">Aucune mission pour l&apos;instant.</p>}
       </div>
     </AppShell>
   );

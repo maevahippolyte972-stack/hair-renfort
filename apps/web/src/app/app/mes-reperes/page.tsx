@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { AppShell } from "@/components/AppShell";
+import { Skeleton } from "@/components/Skeleton";
+import { CountUp } from "@/components/CountUp";
 import { authFetch } from "@/lib/session";
 import { ApiError } from "@/lib/api";
 
@@ -53,6 +56,16 @@ export default function MesReperesPage() {
 
       {error && <p className="mt-4 text-sm text-bordeaux">{error}</p>}
 
+      {!proof && !error && (
+        <div className="mt-6 space-y-6">
+          <div className="grid grid-cols-2 gap-3">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          <Skeleton className="h-16 w-full" />
+        </div>
+      )}
+
       {proof && (
         <div className="mt-6 space-y-6">
           <div className="grid grid-cols-2 gap-3">
@@ -75,8 +88,13 @@ export default function MesReperesPage() {
                     <span>{r.salonNom ?? r.freelanceNom}</span>
                     <span className="text-noir-chaud/60">{r.pourcentage}%</span>
                   </div>
-                  <div className="mt-1.5 h-1.5 rounded-full bg-noir-chaud/10">
-                    <div className="h-1.5 rounded-full bg-laiton" style={{ width: `${r.pourcentage}%` }} />
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-noir-chaud/10">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${r.pourcentage}%` }}
+                      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                      className="h-1.5 rounded-full bg-laiton"
+                    />
                   </div>
                 </div>
               ))}
@@ -91,16 +109,22 @@ export default function MesReperesPage() {
             <dl className="mt-3 grid grid-cols-3 gap-3 text-center text-sm">
               <div>
                 <dt className="text-noir-chaud/60">Terminées</dt>
-                <dd className="font-serif text-xl">{proof.historique.terminees}</dd>
+                <dd className="font-serif text-xl">
+                  <CountUp value={proof.historique.terminees} />
+                </dd>
               </div>
               <div>
                 <dt className="text-noir-chaud/60">Annulées</dt>
-                <dd className="font-serif text-xl">{proof.historique.annulees}</dd>
+                <dd className="font-serif text-xl">
+                  <CountUp value={proof.historique.annulees} />
+                </dd>
               </div>
               {isFreelanceProof(proof) && (
                 <div>
                   <dt className="text-noir-chaud/60">Refusées</dt>
-                  <dd className="font-serif text-xl">{proof.historique.refusees}</dd>
+                  <dd className="font-serif text-xl">
+                    <CountUp value={proof.historique.refusees} />
+                  </dd>
                 </div>
               )}
             </dl>
@@ -114,7 +138,9 @@ export default function MesReperesPage() {
 function StatTile({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4 text-center">
-      <p className="font-serif text-3xl">{value}</p>
+      <p className="font-serif text-3xl">
+        <CountUp value={value} />
+      </p>
       <p className="mt-1 text-xs text-noir-chaud/60">{label}</p>
     </div>
   );

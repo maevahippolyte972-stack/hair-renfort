@@ -18,10 +18,12 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     },
   });
 
+  const text = await res.text();
+  const body = text ? JSON.parse(text) : undefined;
+
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new ApiError(body.message ?? "Une erreur est survenue.", res.status);
+    throw new ApiError(body?.message ?? "Une erreur est survenue.", res.status);
   }
 
-  return res.json() as Promise<T>;
+  return body as T;
 }

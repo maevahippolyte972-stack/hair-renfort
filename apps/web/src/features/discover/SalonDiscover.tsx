@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { authFetch } from "@/lib/session";
 import { SwipeCard } from "@/components/SwipeCard";
 import { SwipeDeck, type SwipeDirection, type SwipeTrigger } from "@/components/SwipeDeck";
+import { Skeleton } from "@/components/Skeleton";
+import { useToast } from "@/components/Toast";
 import { ApiError } from "@/lib/api";
 
 interface Tarif {
@@ -27,12 +29,12 @@ interface FreelanceCard {
 }
 
 export function SalonDiscover() {
+  const toast = useToast();
   const [freelances, setFreelances] = useState<FreelanceCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [trigger, setTrigger] = useState<SwipeTrigger>(null);
   const [history, setHistory] = useState<FreelanceCard[]>([]);
-  const [confirmation, setConfirmation] = useState<string | null>(null);
 
   useEffect(() => {
     authFetch<FreelanceCard[]>("/matching/salon/search")
@@ -50,17 +52,16 @@ export function SalonDiscover() {
         body: JSON.stringify({ action: direction === "right" ? "LIKED" : "PASSED" }),
       });
       if (direction === "right") {
-        setConfirmation("Ajoutée à vos favoris — retrouvez-la dans « Retravailler ensemble ».");
-        setTimeout(() => setConfirmation(null), 2200);
+        toast(`${freelance.prenom} ajoutée à vos favoris — « Retravailler ensemble »`);
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Une erreur est survenue.");
+      toast(err instanceof ApiError ? err.message : "Une erreur est survenue.", "error");
     }
   }
 
   function act(direction: SwipeDirection) {
     if (freelances.length === 0) return;
-    setTrigger({ direction, token: Date.now() });
+    setTrigger({ direction, token: Date.now(), itemId: freelances[0].id });
   }
 
   function undo() {
@@ -70,23 +71,21 @@ export function SalonDiscover() {
     setFreelances((prev) => [last, ...prev]);
   }
 
-  if (loading) return <p className="text-sm text-noir-chaud/60">Chargement des profils…</p>;
+  if (loading) {
+    return (
+      <div>
+        <p className="text-sm text-noir-chaud/60">Profils disponibles</p>
+        <h1 className="font-serif text-3xl">À proximité</h1>
+        <Skeleton className="mt-6 aspect-[3/4] w-full" />
+      </div>
+    );
+  }
 
   return (
     <div>
       <p className="text-sm text-noir-chaud/60">Profils disponibles</p>
       <h1 className="font-serif text-3xl">À proximité</h1>
       {error && <p className="mt-2 text-sm text-bordeaux">{error}</p>}
-
-      {confirmation && (
-        <motion.p
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-3 rounded-lg bg-vert-confirmation/15 px-4 py-2 text-sm text-vert-confirmation"
-        >
-          {confirmation}
-        </motion.p>
-      )}
 
       <div className="mt-6">
         {freelances.length === 0 ? (
