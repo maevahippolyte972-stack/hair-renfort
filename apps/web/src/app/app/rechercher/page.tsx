@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
 import { authFetch } from "@/lib/session";
 import { ApiError } from "@/lib/api";
+import { FREELANCE_SPECIALTIES } from "@hair-renfort/shared";
 
 interface Tarif {
   prestation: string;
@@ -26,17 +27,7 @@ interface FreelanceResult {
   specialties: { name: string }[];
 }
 
-const SPECIALITES = [
-  "Coupe femme",
-  "Coupe homme",
-  "Coloration",
-  "Balayage",
-  "Lissage",
-  "Cheveux texturés",
-  "Coiffure de mariage",
-  "Extensions",
-  "Barbier",
-];
+const SPECIALITES = FREELANCE_SPECIALTIES;
 
 export default function RechercherPage() {
   const toast = useToast();

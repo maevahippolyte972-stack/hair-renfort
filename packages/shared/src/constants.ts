@@ -45,3 +45,36 @@ export const BRAND_COLORS = {
   bordeaux: "#6B2737",
   vertConfirmation: "#4C6B4F",
 } as const;
+
+/**
+ * Spécialités de coiffure proposées à l'inscription, à la publication d'un besoin et
+ * dans les filtres de recherche. Source unique : le seed (packages/db) crée exactement
+ * ces entrées en base, et le web les propose dans les mêmes listes déroulantes — un nom
+ * qui ne correspond pas exactement à une entrée en base fait échouer l'inscription ou la
+ * publication avec "Spécialité inconnue." Ajouter une spécialité ici suffit à la rendre
+ * disponible partout, aucun autre fichier à modifier.
+ */
+export const FREELANCE_SPECIALTIES = [
+  "Coupe femme",
+  "Coupe homme",
+  "Coupe enfant",
+  "Coloration",
+  "Balayage",
+  "Mèches",
+  "Coloration végétale",
+  "Lissage",
+  "Défrisage",
+  "Permanente",
+  "Cheveux texturés",
+  "Tresses",
+  "Locks",
+  "Extensions",
+  "Perruques & postiches",
+  "Chignon",
+  "Coiffure de mariage",
+  "Coiffure événementielle",
+  "Soins capillaires",
+  "Barbier",
+  "Taille de barbe",
+  "Rasage traditionnel",
+] as const;

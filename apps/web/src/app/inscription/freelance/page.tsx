@@ -4,18 +4,9 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormField } from "@/components/FormField";
 import { apiFetch, ApiError } from "@/lib/api";
+import { FREELANCE_SPECIALTIES } from "@hair-renfort/shared";
 
-const SPECIALITES = [
-  "Coupe femme",
-  "Coupe homme",
-  "Coloration",
-  "Balayage",
-  "Lissage",
-  "Cheveux texturés",
-  "Coiffure de mariage",
-  "Extensions",
-  "Barbier",
-];
+const SPECIALITES = FREELANCE_SPECIALTIES;
 
 export default function InscriptionFreelancePage() {
   const router = useRouter();

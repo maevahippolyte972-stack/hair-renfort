@@ -1,4 +1,5 @@
 import { PrismaClient } from "../generated/client";
+import { FREELANCE_SPECIALTIES } from "@hair-renfort/shared";
 
 const prisma = new PrismaClient();
 
@@ -45,18 +46,7 @@ async function main() {
     },
   });
 
-  const specialties = [
-    "Coupe femme",
-    "Coupe homme",
-    "Coloration",
-    "Balayage",
-    "Lissage",
-    "Cheveux texturés",
-    "Coiffure de mariage",
-    "Extensions",
-    "Barbier",
-  ];
-  for (const name of specialties) {
+  for (const name of FREELANCE_SPECIALTIES) {
     await prisma.freelanceSpecialty.upsert({
       where: { name },
       update: {},
