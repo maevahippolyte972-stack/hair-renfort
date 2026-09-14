@@ -23,11 +23,40 @@ export class MessagingService {
     return this.getOrCreateConversation(salonProfileId, freelanceProfileId);
   }
 
+  /**
+   * Conversation n'a pas de relation Prisma directe vers SalonProfile/FreelanceProfile
+   * (volontaire : la messagerie ne doit jamais servir de point d'entrée pour parcourir
+   * "tous les salons" ou "toutes les freelances"). Le nom du contact est donc résolu ici,
+   * un par un, uniquement pour les conversations où l'appelant est déjà participant.
+   */
   async listMine(actorType: "SALON" | "FREELANCE", profileId: string) {
-    return this.prisma.conversation.findMany({
+    const conversations = await this.prisma.conversation.findMany({
       where: actorType === "SALON" ? { salonId: profileId } : { freelanceId: profileId },
       orderBy: { createdAt: "desc" },
     });
+
+    return Promise.all(
+      conversations.map(async (c) => {
+        const counterpart =
+          actorType === "SALON"
+            ? await this.prisma.freelanceProfile.findUnique({
+                where: { id: c.freelanceId },
+                select: { prenom: true, nom: true },
+              })
+            : await this.prisma.salonProfile.findUnique({
+                where: { id: c.salonId },
+                select: { raisonSociale: true },
+              });
+        return {
+          ...c,
+          counterpartName: counterpart
+            ? "raisonSociale" in counterpart
+              ? counterpart.raisonSociale
+              : `${counterpart.prenom} ${counterpart.nom}`
+            : "Profil supprimé",
+        };
+      }),
+    );
   }
 
   async sendMessage(

@@ -23,7 +23,7 @@ export default function ConnexionPage() {
       });
       localStorage.setItem("hr_token", result.accessToken);
       localStorage.setItem("hr_role", result.role);
-      router.push("/verification");
+      router.push("/app/decouvrir");
     } catch (err) {
       setError(err instanceof ApiError ? "Identifiants invalides." : "Une erreur est survenue.");
     } finally {

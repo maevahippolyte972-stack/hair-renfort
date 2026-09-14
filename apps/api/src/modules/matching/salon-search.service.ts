@@ -1,5 +1,5 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { AssignmentStatus, SalonSubscriptionTier } from "@hair-renfort/db";
+import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { AssignmentStatus, InteractionAction, InteractionActorType, SalonSubscriptionTier } from "@hair-renfort/db";
 import { PrismaService } from "../../prisma/prisma.service";
 import { distanceKm } from "../../common/utils/geo";
 import { AvailabilityService } from "./availability.service";
@@ -124,5 +124,33 @@ export class SalonSearchService {
       .slice(0, SUGGESTIONS_LIMIT);
 
     return ranked;
+  }
+
+  /**
+   * Swipe côté salon sur un profil freelance issu de la recherche manuelle (brief :
+   * "façon swipe... dans les deux sens"). "J'aime" ajoute directement aux favoris
+   * ("Retravailler ensemble" fonctionne aussi comme raccourci de première prise de
+   * contact) ; les deux actions sont enregistrées pour la V2 (suggestion active).
+   */
+  async swipe(salonProfileId: string, freelanceId: string, action: "LIKED" | "PASSED") {
+    const freelance = await this.prisma.freelanceProfile.findUnique({ where: { id: freelanceId } });
+    if (!freelance) throw new NotFoundException("Freelance introuvable.");
+
+    await this.prisma.interaction.create({
+      data: {
+        actorType: InteractionActorType.SALON,
+        actorUserId: salonProfileId,
+        targetFreelanceId: freelanceId,
+        action: action === "LIKED" ? InteractionAction.LIKED : InteractionAction.PASSED,
+      },
+    });
+
+    if (action === "LIKED") {
+      await this.prisma.favorite.upsert({
+        where: { salonId_freelanceId: { salonId: salonProfileId, freelanceId } },
+        update: {},
+        create: { salonId: salonProfileId, freelanceId },
+      });
+    }
   }
 }

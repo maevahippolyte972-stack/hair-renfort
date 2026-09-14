@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { apiFetch, ApiError } from "@/lib/api";
 
 const REQUIRED_DOCS: Record<string, { type: string; label: string }[]> = {
@@ -100,6 +101,13 @@ export default function VerificationPage() {
             );
           })}
         </div>
+
+        <Link
+          href="/app/decouvrir"
+          className="mt-10 block rounded-full border border-noir-chaud/20 px-6 py-3 text-center text-sm text-noir-chaud/70 hover:border-laiton"
+        >
+          Continuer vers la plateforme
+        </Link>
       </div>
     </main>
   );
