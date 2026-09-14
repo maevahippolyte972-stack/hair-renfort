@@ -41,6 +41,7 @@ cat <<EOF
     Salon      contact@atelier17.fr
     Freelance  inaya@example.com
     Freelance  lea@example.com
+    Freelance  fatou@example.com
 ────────────────────────────────────────────────────────
 
 EOF

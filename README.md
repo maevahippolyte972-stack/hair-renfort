@@ -14,7 +14,7 @@ règles métier encodées dans le modèle de données.
    **Open in Browser**.
 4. Connectez-vous avec un des comptes de démonstration (mot de passe `motdepasse123`) :
    - Salon (Premium) : `contact@atelier17.fr`
-   - Freelance : `inaya@example.com` ou `lea@example.com`
+   - Freelance : `inaya@example.com`, `lea@example.com` ou `fatou@example.com`
 
 Tout tourne dans le Codespace (Postgres inclus) — rien n'est installé sur votre machine, et
 personne d'autre que vous n'y a accès (lien privé, lié à votre compte GitHub).

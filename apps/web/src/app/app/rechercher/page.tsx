@@ -32,6 +32,7 @@ const SPECIALITES = [
   "Coloration",
   "Balayage",
   "Lissage",
+  "Cheveux texturés",
   "Coiffure de mariage",
   "Extensions",
   "Barbier",

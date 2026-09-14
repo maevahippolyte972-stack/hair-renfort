@@ -43,11 +43,13 @@ async function main() {
   });
   const salon = salonUser.salonProfile ?? (await prisma.salonProfile.findUniqueOrThrow({ where: { userId: salonUser.id } }));
 
-  const [balayage, coloration, coupeFemme, lissage] = await Promise.all([
+  const [balayage, coloration, coupeFemme, lissage, cheveuxTextures, extensions] = await Promise.all([
     prisma.freelanceSpecialty.findUniqueOrThrow({ where: { name: "Balayage" } }),
     prisma.freelanceSpecialty.findUniqueOrThrow({ where: { name: "Coloration" } }),
     prisma.freelanceSpecialty.findUniqueOrThrow({ where: { name: "Coupe femme" } }),
     prisma.freelanceSpecialty.findUniqueOrThrow({ where: { name: "Lissage" } }),
+    prisma.freelanceSpecialty.findUniqueOrThrow({ where: { name: "Cheveux texturés" } }),
+    prisma.freelanceSpecialty.findUniqueOrThrow({ where: { name: "Extensions" } }),
   ]);
 
   const inayaUser = await prisma.user.upsert({
@@ -103,6 +105,32 @@ async function main() {
       },
     },
     include: { freelanceProfile: true },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "fatou@example.com" },
+    update: {},
+    create: {
+      email: "fatou@example.com",
+      passwordHash,
+      role: "FREELANCE",
+      status: "ACTIVE",
+      freelanceProfile: {
+        create: {
+          prenom: "Fatou",
+          nom: "Diallo",
+          telephone: "0699887766",
+          siret: "22233344400012",
+          villeBase: "Paris",
+          latitude: 48.87,
+          longitude: 2.33,
+          zoneMobiliteKm: 18,
+          badgeVerifie: true,
+          tarifsAffiches: [{ prestation: "Journée", montant: 260, unite: "jour" }],
+          specialties: { connect: [{ id: cheveuxTextures.id }, { id: coupeFemme.id }, { id: extensions.id }] },
+        },
+      },
+    },
   });
 
   // Besoin urgent (créneau proche) + besoin normal, pour illustrer le calcul automatique.
@@ -207,6 +235,7 @@ async function main() {
   console.log("  Salon      contact@atelier17.fr");
   console.log("  Freelance  inaya@example.com");
   console.log("  Freelance  lea@example.com");
+  console.log("  Freelance  fatou@example.com");
 }
 
 main()
