@@ -21,7 +21,7 @@ export function SwipeCard({
   footerRight,
 }: SwipeCardProps) {
   return (
-    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-3xl">
+    <div className="relative h-full w-full select-none overflow-hidden rounded-3xl shadow-[0_20px_50px_-12px_rgba(28,23,18,0.35)] ring-1 ring-noir-chaud/5">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={
@@ -31,6 +31,7 @@ export function SwipeCard({
         }
       />
       <div className="absolute inset-0 bg-gradient-to-t from-noir-chaud via-noir-chaud/20 to-transparent" />
+      <div className="absolute inset-0 ring-1 ring-inset ring-ivoire/10" />
 
       <div className="absolute inset-x-0 top-0 flex justify-between p-4">
         {badgeTopLeft && (
@@ -61,7 +62,7 @@ export function SwipeCard({
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2">
             {tags.map((t) => (
-              <span key={t} className="rounded-full border border-ivoire/40 px-3 py-1 text-xs">
+              <span key={t} className="rounded-full border border-ivoire/30 bg-ivoire/10 px-3 py-1 text-xs backdrop-blur-sm">
                 {t}
               </span>
             ))}

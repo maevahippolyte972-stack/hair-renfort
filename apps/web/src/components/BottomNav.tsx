@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import type { Role } from "@/lib/session";
 
 const FREELANCE_TABS = [
@@ -25,7 +26,7 @@ export function BottomNav({ role }: { role: Role }) {
   const tabs = role === "SALON" ? SALON_TABS : FREELANCE_TABS;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 border-t border-noir-chaud/10 bg-ivoire">
+    <nav className="fixed inset-x-0 bottom-0 border-t border-noir-chaud/10 bg-ivoire/85 shadow-[0_-8px_24px_-12px_rgba(28,23,18,0.15)] backdrop-blur-md">
       <div className="mx-auto flex max-w-xl justify-between px-4 py-3">
         {tabs.map((tab) => {
           const active = pathname === tab.href;
@@ -33,11 +34,17 @@ export function BottomNav({ role }: { role: Role }) {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center gap-1 text-xs ${
-                active ? "text-bordeaux" : "text-noir-chaud/50"
+              className={`relative flex flex-col items-center gap-1.5 px-2 text-xs transition-colors ${
+                active ? "text-bordeaux" : "text-noir-chaud/50 hover:text-noir-chaud/80"
               }`}
             >
-              <span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-bordeaux" : "bg-transparent"}`} />
+              {active && (
+                <motion.span
+                  layoutId="bottom-nav-indicator"
+                  className="absolute -top-3 h-1 w-5 rounded-full bg-bordeaux"
+                  transition={{ type: "spring", stiffness: 500, damping: 32 }}
+                />
+              )}
               {tab.label}
             </Link>
           );

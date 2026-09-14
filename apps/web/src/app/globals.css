@@ -4,5 +4,19 @@
 
 body {
   background-color: #f5f1e8;
+  background-image: radial-gradient(circle at 15% 0%, rgba(168, 121, 62, 0.08), transparent 45%),
+    radial-gradient(circle at 100% 25%, rgba(107, 39, 55, 0.05), transparent 40%);
   color: #1c1712;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background-color: #a8793e;
+  color: #f5f1e8;
+}
+
+*:focus-visible {
+  outline: 2px solid #a8793e;
+  outline-offset: 2px;
 }
