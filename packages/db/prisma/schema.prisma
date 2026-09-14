@@ -1,0 +1,616 @@
+// Hair'Renfort — schéma de données
+//
+// Règle de confidentialité (freelance <-> salon uniquement, jamais freelance <-> freelance
+// ni salon <-> salon) : ce schéma ne définit AUCUNE relation qui permettrait de requêter
+// "tous les freelances" depuis un contexte freelance ou "tous les salons" depuis un contexte
+// salon. Cette règle est appliquée ensuite au niveau des services NestJS (voir apps/api),
+// qui n'exposent jamais ce type de requête croisée, même en interne.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Comptes & rôles
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  SALON
+  FREELANCE
+  ADMIN
+}
+
+enum AccountStatus {
+  PENDING_VERIFICATION // inscrit, en attente de validation des justificatifs
+  ACTIVE
+  SUSPENDED // sanction commerciale (annulations répétées, signalement)
+  EXCLUDED
+}
+
+/// Compte utilisateur générique. Les données spécifiques au rôle vivent dans
+/// SalonProfile / FreelanceProfile (relation 1-1), jamais ici, pour que le typage
+/// empêche de mélanger les deux univers.
+model User {
+  id        String        @id @default(cuid())
+  email     String        @unique
+  passwordHash String
+  role      UserRole
+  status    AccountStatus @default(PENDING_VERIFICATION)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // RGPD : droit à l'effacement -> anonymisation plutôt que suppression physique
+  // des lignes liées à des missions (pour ne pas corrompre les stats de l'autre partie).
+  anonymizedAt DateTime?
+
+  salonProfile     SalonProfile?
+  freelanceProfile FreelanceProfile?
+
+  consents             ConsentRecord[]
+  verificationDocuments VerificationDocument[]
+  dataExportRequests    DataExportRequest[]
+
+  sentMessages     Message[]        @relation("MessageSender")
+  reportsFiled     Report[]         @relation("ReportsFiled")
+  reportsReceived  Report[]         @relation("ReportsReceived")
+  adminActions     AdminActionLog[] @relation("AdminActor")
+  searchLogs       SearchLog[]
+
+  @@index([role, status])
+}
+
+/// Consentement RGPD : distinct pour CGU et marketing, jamais pré-coché (imposé côté API/UI).
+enum ConsentType {
+  CGU
+  MARKETING
+}
+
+model ConsentRecord {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  type      ConsentType
+  consentedAt DateTime  @default(now())
+  ipAddress String?
+
+  @@index([userId])
+}
+
+model DataExportRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  requestedAt DateTime @default(now())
+  fulfilledAt DateTime?
+  fileUrl     String? // export signé, expirant
+}
+
+// ---------------------------------------------------------------------------
+// Vérification d'identité (freelance ET salon, symétrique)
+// ---------------------------------------------------------------------------
+
+enum VerificationDocumentType {
+  DIPLOME
+  SIRET
+  RC_PRO
+  IDENTITE_GERANT
+  ADRESSE_ETABLISSEMENT
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Pièces justificatives. Stockage : bucket objet UE séparé, accès signé,
+/// lisible uniquement par des comptes ADMIN (voir ARCHITECTURE.md).
+model VerificationDocument {
+  id       String                   @id @default(cuid())
+  userId   String
+  user     User                     @relation(fields: [userId], references: [id])
+  type     VerificationDocumentType
+  fileUrl  String
+  status   VerificationStatus       @default(PENDING)
+
+  reviewedByAdminId String?
+  reviewedAt         DateTime?
+  rejectionReason    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, type])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Profils
+// ---------------------------------------------------------------------------
+
+enum SalonSubscriptionTier {
+  BASE // 50€ — outillage complet en manuel
+  PREMIUM // 99€ — + suggestion auto + contrat-type + mise en avant hors urgence
+}
+
+model SalonProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  raisonSociale String
+  siret         String @unique
+  nomGerant     String
+  telephone     String
+  adresse       String
+  ville         String
+  codePostal    String
+  latitude      Float
+  longitude     Float
+  description   String?
+
+  badgeVerifie Boolean @default(false)
+
+  subscriptionTier SalonSubscriptionTier @default(BASE)
+
+  // Cohorte d'amorçage : 50 premiers salons -> gratuité 3 mois, accès Premium inclus.
+  isFoundingCohort Boolean   @default(false)
+  freeAccessUntil  DateTime?
+
+  // Taux de fiabilité : jamais fusionné avec la note de qualité (voir Review).
+  // Recalculé automatiquement à chaque ReliabilityEvent, jamais saisi manuellement.
+  reliabilityScore Float @default(100)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  needs            MissionNeed[]
+  favorites        Favorite[]
+  reliabilityEvents ReliabilityEvent[] @relation("SalonReliability")
+  subscription     Subscription?
+
+  @@index([ville])
+  @@index([latitude, longitude])
+}
+
+model FreelanceSpecialty {
+  id   String @id @default(cuid())
+  name String @unique
+
+  freelances FreelanceProfile[] @relation("FreelanceSpecialties")
+  needs      MissionNeed[]      @relation("NeedSpecialty")
+}
+
+model FreelanceProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  prenom    String
+  nom       String
+  telephone String
+  siret     String  @unique
+  bio       String?
+
+  villeBase      String
+  latitude       Float
+  longitude      Float
+  zoneMobiliteKm Int    @default(15)
+
+  badgeVerifie Boolean @default(false)
+
+  // Seule la freelance fixe son tarif (règle structurante, pilier juridique).
+  // Volontairement en texte libre / JSON pour ne jamais devenir un barème imposé
+  // par la plateforme : aucune logique de standardisation ou d'alignement.
+  tarifsAffiches Json // ex: [{ prestation: "Coupe femme", montant: 35, unite: "prestation" }]
+
+  // Cohorte d'amorçage : 200 premières freelances -> gratuité 6 mois.
+  isFoundingCohort Boolean   @default(false)
+  freeAccessUntil  DateTime?
+
+  reliabilityScore Float @default(100)
+
+  specialties FreelanceSpecialty[] @relation("FreelanceSpecialties")
+  portfolio   PortfolioItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments       MissionAssignment[]
+  favoritedBy       Favorite[]
+  reliabilityEvents ReliabilityEvent[] @relation("FreelanceReliability")
+  subscription      Subscription?
+
+  @@index([villeBase])
+  @@index([latitude, longitude])
+}
+
+model PortfolioItem {
+  id                String           @id @default(cuid())
+  freelanceProfileId String
+  freelanceProfile  FreelanceProfile @relation(fields: [freelanceProfileId], references: [id])
+  imageUrl          String
+  createdAt         DateTime         @default(now())
+}
+
+/// "Retravailler ensemble" — jamais bloquant vis-à-vis de la non-exclusivité,
+/// sert uniquement de raccourci de recherche côté salon.
+model Favorite {
+  id                 String           @id @default(cuid())
+  salonId            String
+  salon              SalonProfile     @relation(fields: [salonId], references: [id])
+  freelanceId        String
+  freelance          FreelanceProfile @relation(fields: [freelanceId], references: [id])
+  createdAt          DateTime         @default(now())
+
+  @@unique([salonId, freelanceId])
+}
+
+// ---------------------------------------------------------------------------
+// Besoins & missions
+// ---------------------------------------------------------------------------
+
+enum UrgencyLevel {
+  NORMAL
+  URGENT
+  TRES_URGENT
+}
+
+enum NeedStatus {
+  OUVERT
+  POURVU
+  ANNULE
+  EXPIRE
+}
+
+/// Le besoin publié par le salon. Jamais de tarif ici : seule la freelance affiche un prix.
+/// urgencyLevel n'est JAMAIS saisi par le salon : calculé par un job planifié à partir
+/// du délai restant avant `dateDebut` (voir apps/api UrgencyService), en comparant aux
+/// seuils configurables dans PlatformSetting.
+model MissionNeed {
+  id      String       @id @default(cuid())
+  salonId String
+  salon   SalonProfile @relation(fields: [salonId], references: [id])
+
+  specialtyId String
+  specialty   FreelanceSpecialty @relation("NeedSpecialty", fields: [specialtyId], references: [id])
+
+  description String
+
+  status NeedStatus @default(OUVERT)
+
+  urgencyLevel        UrgencyLevel @default(NORMAL)
+  urgencyLastComputedAt DateTime   @default(now())
+
+  publishedAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  slots       MissionSlot[]
+  assignments MissionAssignment[]
+  interactions Interaction[]
+
+  @@index([status, urgencyLevel])
+  @@index([specialtyId])
+}
+
+/// Un besoin peut couvrir une ou plusieurs dates/créneaux (mission ponctuelle, multi-dates,
+/// récurrente type "3j/semaine pendant 2 mois") sans contrainte de durée imposée.
+model MissionSlot {
+  id            String      @id @default(cuid())
+  missionNeedId String
+  missionNeed   MissionNeed @relation(fields: [missionNeedId], references: [id])
+  date          DateTime
+  heureDebut    String // "09:00"
+  heureFin      String // "18:00"
+
+  @@index([missionNeedId])
+  @@index([date])
+}
+
+enum AssignmentStatus {
+  PROPOSEE // la freelance a manifesté son intérêt / le salon lui a proposé
+  ACCEPTEE // les deux parties sont engagées -> une annulation à partir d'ici impacte la fiabilité
+  TERMINEE // validée par les deux parties
+  REFUSEE // refus AVANT acceptation : libre, sans conséquence, jamais comptabilisé comme un manquement
+  ANNULEE // annulation APRES acceptation : manquement, peut impacter la fiabilité
+}
+
+enum CancelledByParty {
+  SALON
+  FREELANCE
+}
+
+/// Distinction fondamentale (brief, section Annulations) :
+///  - passer de PROPOSEE à REFUSEE est libre, sans effet sur reliabilityScore.
+///  - passer de ACCEPTEE à ANNULEE crée un ReliabilityEvent et peut déclencher une sanction
+///    commerciale (jamais financière).
+/// Ces deux transitions ne doivent JAMAIS être confondues dans le code applicatif.
+model MissionAssignment {
+  id            String      @id @default(cuid())
+  missionNeedId String
+  missionNeed   MissionNeed @relation(fields: [missionNeedId], references: [id])
+  freelanceId   String
+  freelance     FreelanceProfile @relation(fields: [freelanceId], references: [id])
+
+  status AssignmentStatus @default(PROPOSEE)
+
+  // Snapshot du tarif affiché par la freelance au moment de la mission (traçabilité,
+  // jamais utilisé pour un paiement géré par la plateforme).
+  tarifAffiche Json?
+
+  proposedAt DateTime  @default(now())
+  acceptedAt DateTime?
+  refusedAt  DateTime?
+
+  cancelledAt      DateTime?
+  cancelledBy      CancelledByParty?
+  cancelReason     String?
+
+  validatedBySalonAt     DateTime?
+  validatedByFreelanceAt DateTime?
+  // Terminée seulement quand les deux validations sont posées (voir apps/api MissionService).
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reliabilityEvents ReliabilityEvent[]
+  reviews           Review[]
+  reports           Report[]
+
+  @@index([freelanceId, status])
+  @@index([missionNeedId])
+}
+
+/// Alimente reliabilityScore (côté salon ET côté freelance, symétrique).
+/// Créé UNIQUEMENT sur une transition ACCEPTEE -> ANNULEE, jamais sur un refus.
+model ReliabilityEvent {
+  id                   String              @id @default(cuid())
+  missionAssignmentId  String
+  missionAssignment    MissionAssignment   @relation(fields: [missionAssignmentId], references: [id])
+
+  salonId     String?
+  salon       SalonProfile?     @relation("SalonReliability", fields: [salonId], references: [id])
+  freelanceId String?
+  freelance   FreelanceProfile? @relation("FreelanceReliability", fields: [freelanceId], references: [id])
+
+  party     CancelledByParty
+  createdAt DateTime @default(now())
+
+  @@index([salonId])
+  @@index([freelanceId])
+}
+
+// ---------------------------------------------------------------------------
+// Avis (note de qualité) — TOUJOURS distinct du taux de fiabilité
+// ---------------------------------------------------------------------------
+
+model Review {
+  id                  String            @id @default(cuid())
+  missionAssignmentId String
+  missionAssignment   MissionAssignment @relation(fields: [missionAssignmentId], references: [id])
+
+  authorUserId String
+  targetUserId String
+
+  ponctualite Int // 1-5
+  technique   Int // 1-5
+  relationnel Int // 1-5
+  commentaire String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([missionAssignmentId, authorUserId])
+  @@index([targetUserId])
+}
+
+// ---------------------------------------------------------------------------
+// Découverte : recherche, filtres, swipe (données enregistrées dès le MVP
+// pour l'algorithme de suggestion actif V2, cf. brief "Roadmap V2")
+// ---------------------------------------------------------------------------
+
+enum InteractionAction {
+  LIKED
+  PASSED
+}
+
+enum InteractionActorType {
+  SALON
+  FREELANCE
+}
+
+/// Swipe dans les deux sens. Enregistré même quand non exploité (V1), pour que
+/// la V2 (suggestion active + contrainte de diversité) n'ait rien à reconstruire.
+model Interaction {
+  id            String                @id @default(cuid())
+  actorType     InteractionActorType
+  actorUserId   String
+  missionNeedId String?
+  missionNeed   MissionNeed?          @relation(fields: [missionNeedId], references: [id])
+  targetFreelanceId String?
+  targetSalonId     String?
+  action        InteractionAction
+  createdAt     DateTime              @default(now())
+
+  @@index([actorUserId])
+  @@index([targetFreelanceId])
+  @@index([targetSalonId])
+}
+
+/// Historique des recherches/filtres (V2). Non exploité en V1, juste enregistré.
+model SearchLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  filters   Json
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Messagerie
+// ---------------------------------------------------------------------------
+
+model Conversation {
+  id          String   @id @default(cuid())
+  salonId     String
+  freelanceId String
+  createdAt   DateTime @default(now())
+
+  messages Message[]
+
+  @@unique([salonId, freelanceId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id])
+  content        String
+  templateId     String?
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+model MessageTemplate {
+  id      String @id @default(cuid())
+  label   String
+  content String
+  forRole UserRole
+}
+
+// ---------------------------------------------------------------------------
+// Signalements & modération
+// ---------------------------------------------------------------------------
+
+enum ReportCategory {
+  NON_PAIEMENT
+  COMPORTEMENT_INAPPROPRIE
+  NON_RESPECT_CONDITIONS
+  FAUSSE_INFORMATION
+}
+
+enum ReportStatus {
+  RECU
+  EN_COURS_EXAMEN
+  TRAITE
+}
+
+enum ReportIssue {
+  SANS_SUITE
+  AVERTISSEMENT
+  SUSPENSION
+  EXCLUSION
+}
+
+model Report {
+  id     String @id @default(cuid())
+
+  reporterId String
+  reporter   User   @relation("ReportsFiled", fields: [reporterId], references: [id])
+  reportedId String
+  reported   User   @relation("ReportsReceived", fields: [reportedId], references: [id])
+
+  missionAssignmentId String?
+  missionAssignment   MissionAssignment? @relation(fields: [missionAssignmentId], references: [id])
+
+  category    ReportCategory
+  description String
+  status      ReportStatus   @default(RECU)
+  issue       ReportIssue?
+
+  handledByAdminId String?
+  resolvedAt        DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([reportedId])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Abonnements (Stripe) — aucun flux financier de mission ne transite ici
+// ---------------------------------------------------------------------------
+
+enum SubscriptionPlan {
+  SALON_BASE
+  SALON_PREMIUM
+  FREELANCE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Subscription {
+  id     String @id @default(cuid())
+
+  salonId     String?       @unique
+  salon       SalonProfile? @relation(fields: [salonId], references: [id])
+  freelanceId String?       @unique
+  freelance   FreelanceProfile? @relation(fields: [freelanceId], references: [id])
+
+  plan   SubscriptionPlan
+  status SubscriptionStatus @default(TRIALING)
+
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+
+  trialEndsAt        DateTime?
+  currentPeriodEnd   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Contrat-type : proposé, jamais imposé ni signé "au nom" de la plateforme.
+/// Salon Premium : inclus. Freelance : achat à l'unité (pas d'abonnement premium freelance).
+model ContractGeneration {
+  id                  String   @id @default(cuid())
+  missionAssignmentId String?
+  requestedByUserId   String
+  pdfUrl              String?
+  paidUnit            Boolean  @default(false) // true si achat à l'unité (freelance)
+  createdAt           DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Back-office / administration
+// ---------------------------------------------------------------------------
+
+model AdminActionLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation("AdminActor", fields: [adminId], references: [id])
+  action     String // ex: "APPROVE_VERIFICATION", "SUSPEND_ACCOUNT", "RESOLVE_REPORT"
+  targetType String // ex: "User", "Report", "VerificationDocument"
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([targetType, targetId])
+}
+
+/// Seuils métier configurables sans déploiement (urgence, sanctions d'annulation).
+/// Valeurs par défaut posées par le code, modifiables depuis le back-office.
+model PlatformSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedByAdminId String?
+}
