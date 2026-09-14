@@ -1,0 +1,32 @@
+{
+  "name": "Hair'Renfort — environnement de démo",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/hair-renfort",
+  "shutdownAction": "stopCompose",
+
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start-servers.sh",
+
+  "forwardPorts": [3000, 4000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Hair'Renfort — Web",
+      "onAutoForward": "openPreview"
+    },
+    "4000": {
+      "label": "Hair'Renfort — API",
+      "onAutoForward": "silent"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["Prisma.prisma", "dbaeumer.vscode-eslint"]
+    }
+  }
+}

@@ -4,6 +4,21 @@ Plateforme de mise en relation entre salons de coiffure et coiffeurs freelances 
 ponctuel, non-exclusif). Voir `ARCHITECTURE.md` pour le détail des choix techniques et des
 règles métier encodées dans le modèle de données.
 
+## Tester sans rien installer (GitHub Codespaces)
+
+1. Sur cette page GitHub, bouton vert **Code** → onglet **Codespaces** → **Create codespace on
+   claude/new-session-p07wi0** (ou la branche courante).
+2. Patientez ~2-3 minutes (installation + base de données + comptes de démonstration créés
+   automatiquement) — la progression s'affiche dans le terminal.
+3. Une notification "Your application running on port 3000 is available" apparaît : cliquez
+   **Open in Browser**.
+4. Connectez-vous avec un des comptes de démonstration (mot de passe `motdepasse123`) :
+   - Salon (Premium) : `contact@atelier17.fr`
+   - Freelance : `inaya@example.com` ou `lea@example.com`
+
+Tout tourne dans le Codespace (Postgres inclus) — rien n'est installé sur votre machine, et
+personne d'autre que vous n'y a accès (lien privé, lié à votre compte GitHub).
+
 ## État du projet
 
 MVP en cours de construction, dans l'ordre défini par le brief :
@@ -14,10 +29,11 @@ MVP en cours de construction, dans l'ordre défini par le brief :
 4. ✅ Suggestion automatique — Premium salon + toutes les freelances (`.../matching/*`)
 5. ✅ Dashboards de triangulation de preuves (`.../dashboards`)
 6. ✅ Back-office administrateur (`.../admin`)
-7. ⏳ Web : shell, design system et flux d'inscription en place (`apps/web`) ; swipe, dashboards,
-   messagerie et back-office restent à construire côté interface.
-8. ⏳ Paiements Stripe (abonnements), notifications push, upload de fichiers signé (S3) : à
-   brancher sur les points d'extension déjà prévus dans le code.
+7. ✅ Web : shell, design system, flux d'inscription, découverte façon swipe, recherche,
+   publication, missions, repères, messagerie (`apps/web`).
+8. ⏳ Paiements Stripe (abonnements), notifications push, upload de fichiers signé (S3),
+   interface du back-office (aujourd'hui API-only) : à brancher sur les points d'extension
+   déjà prévus dans le code.
 
 ## Structure
 
@@ -43,6 +59,7 @@ cp apps/api/.env.example apps/api/.env   # renseigner DATABASE_URL
 pnpm db:migrate
 pnpm db:generate
 pnpm --filter @hair-renfort/db seed
+pnpm --filter @hair-renfort/db seed:demo # optionnel : comptes de démo (voir plus haut)
 pnpm --filter @hair-renfort/api dev      # http://localhost:4000
 
 # Web (autre terminal)
