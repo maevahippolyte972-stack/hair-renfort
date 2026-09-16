@@ -150,6 +150,7 @@ export class AuthService {
             latitude: dto.latitude,
             longitude: dto.longitude,
             zoneMobiliteKm: dto.zoneMobiliteKm ?? 15,
+            anneesExperience: dto.anneesExperience,
             tarifsAffiches: dto.tarifsAffiches as unknown as object,
             isFoundingCohort,
             freeAccessUntil,

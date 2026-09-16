@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
@@ -20,6 +21,7 @@ interface FreelanceResult {
   nom: string;
   villeBase: string;
   distanceKm: number;
+  anneesExperience: number | null;
   badgeVerifie: boolean;
   reliabilityScore: number;
   rating: number | null;
@@ -127,6 +129,7 @@ export default function RechercherPage() {
               <div>
                 <p className="font-serif text-lg">
                   {f.prenom} {f.nom}
+                  {f.anneesExperience ? ` · ${f.anneesExperience} ans d'expérience` : ""}
                 </p>
                 <p className="text-xs text-noir-chaud/60">
                   {f.villeBase} · à {f.distanceKm.toFixed(1)} km
@@ -147,13 +150,21 @@ export default function RechercherPage() {
                 </span>
               )}
             </div>
-            <button
-              onClick={() => addFavorite(f.id, f.prenom)}
-              disabled={favorited.has(f.id)}
-              className="mt-3 rounded-full border border-laiton px-4 py-1.5 text-xs text-laiton disabled:opacity-40"
-            >
-              {favorited.has(f.id) ? "Ajoutée aux favoris" : "Ajouter aux favoris"}
-            </button>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => addFavorite(f.id, f.prenom)}
+                disabled={favorited.has(f.id)}
+                className="rounded-full border border-laiton px-4 py-1.5 text-xs text-laiton disabled:opacity-40"
+              >
+                {favorited.has(f.id) ? "Ajoutée aux favoris" : "Ajouter aux favoris"}
+              </button>
+              <Link
+                href={`/app/freelances/${f.id}`}
+                className="rounded-full border border-noir-chaud/20 px-4 py-1.5 text-xs text-noir-chaud/70"
+              >
+                Voir le profil
+              </Link>
+            </div>
           </div>
         ))}
         {results?.length === 0 && <p className="text-sm text-noir-chaud/60">Aucun résultat pour ces critères.</p>}

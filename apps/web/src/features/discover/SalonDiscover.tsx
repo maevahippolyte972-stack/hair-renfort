@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { authFetch } from "@/lib/session";
 import { SwipeCard } from "@/components/SwipeCard";
@@ -21,6 +22,7 @@ interface FreelanceCard {
   nom: string;
   villeBase: string;
   zoneMobiliteKm: number;
+  anneesExperience: number | null;
   badgeVerifie: boolean;
   distanceKm: number;
   rating: number | null;
@@ -106,6 +108,7 @@ export function SalonDiscover() {
                   title={`${current.prenom} ${current.nom}`}
                   meta={[
                     ...(current.rating !== null ? [{ icon: "★", label: `${current.rating} / 5` }] : []),
+                    ...(current.anneesExperience ? [{ icon: "🎓", label: `${current.anneesExperience} ans d'expérience` }] : []),
                     { icon: "📍", label: `Mobile dans un rayon de ${current.zoneMobiliteKm} km` },
                   ]}
                   tags={current.specialties.slice(0, 3).map((s) => s.name)}
@@ -114,6 +117,14 @@ export function SalonDiscover() {
               );
             }}
           />
+        )}
+        {freelances[0] && (
+          <Link
+            href={`/app/freelances/${freelances[0].id}`}
+            className="mt-4 block text-center text-sm text-laiton underline underline-offset-4"
+          >
+            Voir le profil complet
+          </Link>
         )}
       </div>
 

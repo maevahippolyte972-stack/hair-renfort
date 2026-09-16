@@ -1,15 +1,28 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AppShell } from "@/components/AppShell";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
 import { authFetch } from "@/lib/session";
 import { ApiError } from "@/lib/api";
-import { FREELANCE_SPECIALTIES } from "@hair-renfort/shared";
+import { FREELANCE_SPECIALTIES, DEFAULT_URGENCY_THRESHOLDS_HOURS } from "@hair-renfort/shared";
 
 const SPECIALITES = FREELANCE_SPECIALTIES;
+
+/** Aperçu uniquement — reprend les seuils par défaut (voir PlatformSetting côté back-office,
+ * modifiables sans déploiement). Le badge affiché après publication reflète le calcul
+ * serveur, qui fait foi ; celui-ci n'est qu'une prévisualisation pendant la saisie. */
+function previewUrgency(date: string, heureDebut: string): "NORMAL" | "URGENT" | "TRES_URGENT" | null {
+  if (!date) return null;
+  const target = new Date(`${date}T${heureDebut || "09:00"}:00`);
+  if (Number.isNaN(target.getTime())) return null;
+  const hoursUntil = (target.getTime() - Date.now()) / (1000 * 60 * 60);
+  if (hoursUntil <= DEFAULT_URGENCY_THRESHOLDS_HOURS.tresUrgent) return "TRES_URGENT";
+  if (hoursUntil <= DEFAULT_URGENCY_THRESHOLDS_HOURS.urgent) return "URGENT";
+  return "NORMAL";
+}
 
 interface Need {
   id: string;
@@ -25,6 +38,9 @@ export default function PublierPage() {
   const [myNeeds, setMyNeeds] = useState<Need[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [date, setDate] = useState("");
+  const [heureDebut, setHeureDebut] = useState("09:00");
+  const urgencyPreview = useMemo(() => previewUrgency(date, heureDebut), [date, heureDebut]);
 
   function loadMine() {
     authFetch<Need[]>("/missions/needs/mine")
@@ -57,6 +73,8 @@ export default function PublierPage() {
       });
       toast("Besoin publié — visible dans le flux des freelances concernées.");
       (e.target as HTMLFormElement).reset();
+      setDate("");
+      setHeureDebut("09:00");
       loadMine();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Une erreur est survenue.");
@@ -98,9 +116,38 @@ export default function PublierPage() {
           className="w-full rounded-lg border border-noir-chaud/20 bg-white px-3 py-2 text-sm"
         />
         <div className="grid grid-cols-3 gap-3">
-          <input type="date" name="date" required className="rounded-lg border border-noir-chaud/20 bg-white px-3 py-2 text-sm" />
-          <input type="time" name="heureDebut" required defaultValue="09:00" className="rounded-lg border border-noir-chaud/20 bg-white px-3 py-2 text-sm" />
+          <input
+            type="date"
+            name="date"
+            required
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="rounded-lg border border-noir-chaud/20 bg-white px-3 py-2 text-sm"
+          />
+          <input
+            type="time"
+            name="heureDebut"
+            required
+            value={heureDebut}
+            onChange={(e) => setHeureDebut(e.target.value)}
+            className="rounded-lg border border-noir-chaud/20 bg-white px-3 py-2 text-sm"
+          />
           <input type="time" name="heureFin" required defaultValue="18:00" className="rounded-lg border border-noir-chaud/20 bg-white px-3 py-2 text-sm" />
+        </div>
+
+        <div className="flex items-center gap-3 rounded-xl bg-noir-chaud/5 p-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-bordeaux/10 text-bordeaux">
+            🕘
+          </span>
+          <div className="text-xs leading-5">
+            <p className="font-semibold text-noir-chaud">Urgence calculée automatiquement</p>
+            <p className="text-noir-chaud/60">
+              {!date && "Un badge apparaîtra de lui-même selon la date choisie."}
+              {date && urgencyPreview === "NORMAL" && "Aucun badge : la mission n'est pas encore proche."}
+              {date && urgencyPreview === "URGENT" && "Cette annonce portera le badge « Urgent »."}
+              {date && urgencyPreview === "TRES_URGENT" && "Cette annonce portera le badge « Très urgent »."}
+            </p>
+          </div>
         </div>
 
         {error && <p className="text-sm text-bordeaux">{error}</p>}

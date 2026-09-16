@@ -17,6 +17,7 @@ interface FreelanceMe {
   prenom: string;
   nom: string;
   villeBase: string;
+  anneesExperience: number | null;
   badgeVerifie: boolean;
   reliabilityScore: number;
   tarifsAffiches: { prestation: string; montant: number; unite: string }[];
@@ -44,6 +45,9 @@ export default function ProfilPage() {
       <h1 className="font-serif text-3xl">
         {me && "raisonSociale" in me ? me.raisonSociale : me ? `${me.prenom} ${me.nom}` : "…"}
       </h1>
+      {me && "anneesExperience" in me && me.anneesExperience !== null && (
+        <p className="mt-1 text-sm text-noir-chaud/60">{me.anneesExperience} ans d&apos;expérience</p>
+      )}
 
       {me && (
         <div className="mt-6 space-y-3">

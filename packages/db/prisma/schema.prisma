@@ -198,6 +198,10 @@ model FreelanceProfile {
   siret     String  @unique
   bio       String?
 
+  // Affiché à la place de l'âge (jamais demandé ni affiché) : le signal professionnel
+  // pertinent pour un salon est l'expérience, pas l'âge.
+  anneesExperience Int?
+
   villeBase      String
   latitude       Float
   longitude      Float

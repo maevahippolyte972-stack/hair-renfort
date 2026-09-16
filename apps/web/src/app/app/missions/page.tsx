@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
@@ -14,7 +15,7 @@ interface Assignment {
   validatedByFreelanceAt: string | null;
   missionNeed: {
     specialty: { name: string };
-    salon: { raisonSociale: string; ville: string };
+    salon: { id: string; raisonSociale: string; ville: string };
     slots: { date: string; heureDebut: string; heureFin: string }[];
   };
 }
@@ -86,7 +87,10 @@ export default function MissionsPage() {
               <span className="rounded-full bg-noir-chaud/5 px-2.5 py-1 text-xs">{STATUS_LABEL[a.status]}</span>
             </div>
             <p className="mt-1 text-xs text-noir-chaud/60">
-              {a.missionNeed.salon.raisonSociale} · {a.missionNeed.salon.ville}
+              <Link href={`/app/salons/${a.missionNeed.salon.id}`} className="underline underline-offset-2">
+                {a.missionNeed.salon.raisonSociale}
+              </Link>{" "}
+              · {a.missionNeed.salon.ville}
             </p>
             {a.missionNeed.slots[0] && (
               <p className="mt-1 text-xs text-noir-chaud/60">

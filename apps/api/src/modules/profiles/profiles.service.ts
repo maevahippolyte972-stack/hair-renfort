@@ -29,7 +29,7 @@ export class ProfilesService {
   async getSalonPublicProfile(salonId: string) {
     const salon = await this.prisma.salonProfile.findUnique({ where: { id: salonId } });
     if (!salon) throw new NotFoundException("Salon introuvable.");
-    const rating = await this.rating.getAverageRating(salon.userId);
+    const notes = await this.rating.getCriteriaAverages(salon.userId);
     return {
       id: salon.id,
       raisonSociale: salon.raisonSociale,
@@ -37,31 +37,33 @@ export class ProfilesService {
       description: salon.description,
       badgeVerifie: salon.badgeVerifie,
       reliabilityScore: salon.reliabilityScore,
-      rating,
+      notes,
     };
   }
 
-  /** Vue publique d'une freelance, accessible uniquement à un salon authentifié. */
+  /** Vue publique d'une freelance, accessible uniquement à un salon authentifié.
+   * "notes" détaille chaque critère (brief) — jamais un seul score fondu. */
   async getFreelancePublicProfile(freelanceId: string) {
     const freelance = await this.prisma.freelanceProfile.findUnique({
       where: { id: freelanceId },
       include: { specialties: true, portfolio: true },
     });
     if (!freelance) throw new NotFoundException("Freelance introuvable.");
-    const rating = await this.rating.getAverageRating(freelance.userId);
+    const notes = await this.rating.getCriteriaAverages(freelance.userId);
     return {
       id: freelance.id,
       prenom: freelance.prenom,
       nom: freelance.nom,
       villeBase: freelance.villeBase,
       zoneMobiliteKm: freelance.zoneMobiliteKm,
+      anneesExperience: freelance.anneesExperience,
       bio: freelance.bio,
       badgeVerifie: freelance.badgeVerifie,
       reliabilityScore: freelance.reliabilityScore,
       tarifsAffiches: freelance.tarifsAffiches,
       specialties: freelance.specialties,
       portfolio: freelance.portfolio,
-      rating,
+      notes,
     };
   }
 }

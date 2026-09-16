@@ -52,6 +52,7 @@ export default function InscriptionFreelancePage() {
           latitude: Number(form.get("latitude")),
           longitude: Number(form.get("longitude")),
           zoneMobiliteKm: Number(form.get("zoneMobiliteKm") || 15),
+          anneesExperience: form.get("anneesExperience") ? Number(form.get("anneesExperience")) : undefined,
           specialtyNames: specialties,
           tarifsAffiches: [{ prestation, montant: tarif, unite: "prestation" }],
           acceptCgu,
@@ -117,6 +118,13 @@ export default function InscriptionFreelancePage() {
             <FormField id="villeBase" name="villeBase" label="Ville de base" required />
             <FormField id="zoneMobiliteKm" name="zoneMobiliteKm" type="number" label="Zone de mobilité (km)" defaultValue={15} />
           </div>
+          <FormField
+            id="anneesExperience"
+            name="anneesExperience"
+            type="number"
+            min={0}
+            label="Années d'expérience (facultatif)"
+          />
           <div className="grid grid-cols-2 gap-4">
             <FormField id="latitude" name="latitude" type="number" step="any" label="Latitude" required />
             <FormField id="longitude" name="longitude" type="number" step="any" label="Longitude" required />

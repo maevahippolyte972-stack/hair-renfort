@@ -58,6 +58,13 @@ export class RegisterFreelanceDto {
   @Min(1)
   zoneMobiliteKm?: number;
 
+  /** Affiché à la place de l'âge (jamais demandé) : le signal pertinent pour un salon
+   * est l'expérience professionnelle, pas l'âge. */
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  anneesExperience?: number;
+
   @IsArray()
   @ArrayMinSize(1, { message: "Au moins une spécialité est requise." })
   @IsString({ each: true })
