@@ -91,7 +91,7 @@ export default function SalonProfilePage() {
             <p className="mt-4 text-sm leading-relaxed text-noir-chaud/80">{profile.description}</p>
           )}
 
-          <div className="mt-6 rounded-2xl border border-noir-chaud/10 bg-white/50 p-4 text-center">
+          <div className="mt-6 editorial-card p-4 text-center">
             <p className="font-serif text-2xl">{profile.reliabilityScore}%</p>
             <p className="mt-1 text-xs text-noir-chaud/60">Missions honorées</p>
           </div>

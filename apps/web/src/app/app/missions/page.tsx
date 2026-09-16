@@ -68,7 +68,7 @@ export default function MissionsPage() {
 
   return (
     <AppShell>
-      <p className="text-sm text-noir-chaud/60">Mes candidatures</p>
+      <p className="kicker">Mes candidatures</p>
       <h1 className="font-serif text-3xl">Missions</h1>
 
       {error && <p className="mt-4 text-sm text-bordeaux">{error}</p>}
@@ -81,7 +81,7 @@ export default function MissionsPage() {
           </>
         )}
         {assignments?.map((a) => (
-          <div key={a.id} className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4">
+          <div key={a.id} className="editorial-card p-4">
             <div className="flex items-center justify-between">
               <p className="font-serif text-lg">{a.missionNeed.specialty.name}</p>
               <span className="rounded-full bg-noir-chaud/5 px-2.5 py-1 text-xs">{STATUS_LABEL[a.status]}</span>

@@ -22,7 +22,7 @@ export default function MessagesPage() {
 
   return (
     <AppShell>
-      <p className="text-sm text-noir-chaud/60">Messagerie</p>
+      <p className="kicker">Messagerie</p>
       <h1 className="font-serif text-3xl">Messages</h1>
 
       <div className="mt-6 space-y-2">
@@ -30,7 +30,7 @@ export default function MessagesPage() {
           <Link
             key={c.id}
             href={`/app/messages/${c.id}`}
-            className="block rounded-2xl border border-noir-chaud/10 bg-white/50 p-4 hover:border-laiton"
+            className="block editorial-card p-4 hover:border-laiton"
           >
             <p className="font-serif">{c.counterpartName}</p>
           </Link>

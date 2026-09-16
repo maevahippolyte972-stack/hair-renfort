@@ -1,6 +1,6 @@
 import { apiFetch, ApiError } from "./api";
 
-export type Role = "SALON" | "FREELANCE";
+export type Role = "SALON" | "FREELANCE" | "ADMIN";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;

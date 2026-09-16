@@ -76,7 +76,7 @@ export function SalonDiscover() {
   if (loading) {
     return (
       <div>
-        <p className="text-sm text-noir-chaud/60">Profils disponibles</p>
+        <p className="kicker">Profils disponibles</p>
         <h1 className="font-serif text-3xl">À proximité</h1>
         <Skeleton className="mt-6 aspect-[3/4] w-full" />
       </div>
@@ -85,7 +85,7 @@ export function SalonDiscover() {
 
   return (
     <div>
-      <p className="text-sm text-noir-chaud/60">Profils disponibles</p>
+      <p className="kicker">Profils disponibles</p>
       <h1 className="font-serif text-3xl">À proximité</h1>
       {error && <p className="mt-2 text-sm text-bordeaux">{error}</p>}
 

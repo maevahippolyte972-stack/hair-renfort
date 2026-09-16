@@ -62,6 +62,7 @@ model User {
   reportsReceived  Report[]         @relation("ReportsReceived")
   adminActions     AdminActionLog[] @relation("AdminActor")
   searchLogs       SearchLog[]
+  pushSubscriptions PushSubscription[]
 
   @@index([role, status])
 }
@@ -617,4 +618,19 @@ model PlatformSetting {
   value     Json
   updatedAt DateTime @updatedAt
   updatedByAdminId String?
+}
+
+/// Abonnement Web Push d'un appareil (alerte "nouvelle mission" côté freelance).
+/// Un utilisateur peut avoir plusieurs appareils ; chacun a sa propre ligne.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

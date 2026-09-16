@@ -109,11 +109,11 @@ export default function FreelanceProfilePage() {
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4 text-center">
+            <div className="editorial-card p-4 text-center">
               <p className="font-serif text-2xl">{profile.reliabilityScore}%</p>
               <p className="mt-1 text-xs text-noir-chaud/60">Missions honorées</p>
             </div>
-            <div className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4 text-center">
+            <div className="editorial-card p-4 text-center">
               <p className="font-serif text-2xl">Mobile {profile.zoneMobiliteKm} km</p>
               <p className="mt-1 text-xs text-noir-chaud/60">Zone de déplacement</p>
             </div>

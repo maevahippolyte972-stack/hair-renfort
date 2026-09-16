@@ -43,6 +43,17 @@ async function main() {
   });
   const salon = salonUser.salonProfile ?? (await prisma.salonProfile.findUniqueOrThrow({ where: { userId: salonUser.id } }));
 
+  await prisma.user.upsert({
+    where: { email: "admin@hair-renfort.app" },
+    update: {},
+    create: {
+      email: "admin@hair-renfort.app",
+      passwordHash,
+      role: "ADMIN",
+      status: "ACTIVE",
+    },
+  });
+
   const [balayage, coloration, coupeFemme, lissage, cheveuxTextures, extensions] = await Promise.all([
     prisma.freelanceSpecialty.findUniqueOrThrow({ where: { name: "Balayage" } }),
     prisma.freelanceSpecialty.findUniqueOrThrow({ where: { name: "Coloration" } }),
@@ -109,7 +120,7 @@ async function main() {
     include: { freelanceProfile: true },
   });
 
-  await prisma.user.upsert({
+  const fatouUser = await prisma.user.upsert({
     where: { email: "fatou@example.com" },
     update: {},
     create: {
@@ -234,7 +245,31 @@ async function main() {
     });
   }
 
+  // Un justificatif en attente + un signalement ouvert, pour que le back-office admin
+  // ait quelque chose à traiter dès l'ouverture (compte admin@hair-renfort.app).
+  const pendingDoc = await prisma.verificationDocument.findFirst({
+    where: { userId: fatouUser.id, type: "RC_PRO" },
+  });
+  if (!pendingDoc) {
+    await prisma.verificationDocument.create({
+      data: { userId: fatouUser.id, type: "RC_PRO", fileUrl: "https://example.com/justificatifs/fatou-rc-pro.pdf" },
+    });
+  }
+
+  const existingReport = await prisma.report.findFirst({ where: { reporterId: salonUser.id, reportedId: inayaUser.id } });
+  if (!existingReport) {
+    await prisma.report.create({
+      data: {
+        reporterId: salonUser.id,
+        reportedId: inayaUser.id,
+        category: "NON_RESPECT_CONDITIONS",
+        description: "Retard important non signalé sur le créneau du matin, cliente en attente 40 minutes.",
+      },
+    });
+  }
+
   console.log("Comptes de démonstration prêts (mot de passe : motdepasse123) :");
+  console.log("  Admin      admin@hair-renfort.app");
   console.log("  Salon      contact@atelier17.fr");
   console.log("  Freelance  inaya@example.com");
   console.log("  Freelance  lea@example.com");

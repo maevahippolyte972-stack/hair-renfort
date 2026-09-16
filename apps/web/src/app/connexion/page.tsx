@@ -23,7 +23,7 @@ export default function ConnexionPage() {
       });
       localStorage.setItem("hr_token", result.accessToken);
       localStorage.setItem("hr_role", result.role);
-      router.push("/app/decouvrir");
+      router.push(result.role === "ADMIN" ? "/admin" : "/app/decouvrir");
     } catch (err) {
       setError(err instanceof ApiError ? "Identifiants invalides." : "Une erreur est survenue.");
     } finally {
@@ -33,16 +33,18 @@ export default function ConnexionPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-ivoire px-6 text-noir-chaud">
-      <div className="w-full max-w-sm">
-        <h1 className="font-serif text-3xl">Connexion</h1>
-        <form onSubmit={onSubmit} className="mt-8 space-y-5">
+      <div className="editorial-card w-full max-w-sm p-7">
+        <p className="kicker">Hair&apos;Renfort</p>
+        <h1 className="mt-2 font-serif text-3xl">Connexion</h1>
+        <span className="brass-rule mt-3 block" />
+        <form onSubmit={onSubmit} className="mt-7 space-y-5">
           <FormField id="email" name="email" type="email" label="Email" required />
           <FormField id="password" name="password" type="password" label="Mot de passe" required />
           {error && <p className="text-sm text-bordeaux">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-noir-chaud px-6 py-3 text-ivoire transition hover:bg-laiton disabled:opacity-50"
+            className="press w-full rounded-full bg-gradient-to-br from-noir-chaud to-noir-chaud/90 px-6 py-3 text-ivoire transition hover:from-laiton hover:to-laiton/90 disabled:opacity-50"
           >
             {loading ? "Connexion…" : "Se connecter"}
           </button>

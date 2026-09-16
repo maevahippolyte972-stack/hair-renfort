@@ -3,6 +3,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { NeedStatus, UrgencyLevel } from "@hair-renfort/db";
 import { DEFAULT_URGENCY_THRESHOLDS_HOURS } from "@hair-renfort/shared";
 import { PrismaService } from "../../prisma/prisma.service";
+import { PushService } from "../notifications/push.service";
 
 /**
  * Calcule le niveau d'urgence à partir du seul délai restant avant le créneau le plus
@@ -14,7 +15,10 @@ import { PrismaService } from "../../prisma/prisma.service";
 export class UrgencyService {
   private readonly logger = new Logger(UrgencyService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private pushService: PushService,
+  ) {}
 
   async getThresholds() {
     const setting = await this.prisma.platformSetting.findUnique({
@@ -39,7 +43,7 @@ export class UrgencyService {
     const thresholds = await this.getThresholds();
     const needs = await this.prisma.missionNeed.findMany({
       where: { status: NeedStatus.OUVERT },
-      include: { slots: true },
+      include: { slots: true, specialty: true, salon: true },
     });
 
     const now = Date.now();
@@ -58,8 +62,15 @@ export class UrgencyService {
           data: { urgencyLevel: newLevel, urgencyLastComputedAt: new Date() },
         });
         if (newLevel !== UrgencyLevel.NORMAL) {
-          // TODO V1: déclencher la notification push anticipée aux freelances disponibles à proximité.
           this.logger.log(`Besoin ${need.id} recalculé au niveau ${newLevel}.`);
+          this.pushService
+            .notifyFreelancesOfNewNeed({
+              specialtyLabel: need.specialty.name,
+              salonNom: need.salon.raisonSociale,
+              ville: need.salon.ville,
+              urgencyLevel: newLevel,
+            })
+            .catch(() => undefined);
         }
       }
     }

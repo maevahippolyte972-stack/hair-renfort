@@ -3,12 +3,14 @@ import { NeedStatus } from "@hair-renfort/db";
 import { PrismaService } from "../../prisma/prisma.service";
 import { UrgencyService } from "./urgency.service";
 import { CreateNeedDto } from "./dto/create-need.dto";
+import { PushService } from "../notifications/push.service";
 
 @Injectable()
 export class NeedsService {
   constructor(
     private prisma: PrismaService,
     private urgencyService: UrgencyService,
+    private pushService: PushService,
   ) {}
 
   async create(salonProfileId: string, dto: CreateNeedDto) {
@@ -23,7 +25,7 @@ export class NeedsService {
     const hoursUntil = (earliest.getTime() - Date.now()) / (1000 * 60 * 60);
     const urgencyLevel = this.urgencyService.computeLevel(hoursUntil, thresholds);
 
-    return this.prisma.missionNeed.create({
+    const need = await this.prisma.missionNeed.create({
       data: {
         salonId: salonProfileId,
         specialtyId: specialty.id,
@@ -37,8 +39,20 @@ export class NeedsService {
           })),
         },
       },
-      include: { slots: true, specialty: true },
+      include: { slots: true, specialty: true, salon: true },
     });
+
+    // Best-effort : une alerte non envoyée ne doit jamais faire échouer la publication.
+    this.pushService
+      .notifyFreelancesOfNewNeed({
+        specialtyLabel: need.specialty.name,
+        salonNom: need.salon.raisonSociale,
+        ville: need.salon.ville,
+        urgencyLevel,
+      })
+      .catch(() => undefined);
+
+    return need;
   }
 
   async listMine(salonProfileId: string) {

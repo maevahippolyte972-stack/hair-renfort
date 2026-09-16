@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { AppShell } from "@/components/AppShell";
 import { Skeleton } from "@/components/Skeleton";
 import { CountUp } from "@/components/CountUp";
+import { AutonomyGauge } from "@/components/AutonomyGauge";
 import { authFetch } from "@/lib/session";
 import { ApiError } from "@/lib/api";
 
@@ -47,7 +48,7 @@ export default function MesReperesPage() {
 
   return (
     <AppShell>
-      <p className="text-sm text-noir-chaud/60">Preuve d&apos;indépendance</p>
+      <p className="kicker">Preuve d&apos;indépendance</p>
       <h1 className="font-serif text-3xl">Mes repères</h1>
       <p className="mt-1 text-sm text-noir-chaud/60">
         Visible uniquement par vous. Utile en cas de contrôle URSSAF : elle démontre que vous ne
@@ -78,6 +79,14 @@ export default function MesReperesPage() {
               value={isFreelanceProof(proof) ? proof.totalMissionsAccepteesOuPlus : proof.totalMissionsConfieesOuPlus}
             />
           </div>
+
+          {isFreelanceProof(proof) && (
+            <AutonomyGauge
+              topSalonPourcentage={proof.repartitionParSalon[0]?.pourcentage ?? 0}
+              nombreSalonsDifferents={proof.nombreSalonsDifferents}
+              totalMissions={proof.totalMissionsAccepteesOuPlus}
+            />
+          )}
 
           <div>
             <h2 className="font-serif text-lg">Répartition</h2>
@@ -137,7 +146,7 @@ export default function MesReperesPage() {
 
 function StatTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4 text-center">
+    <div className="editorial-card p-4 text-center">
       <p className="font-serif text-3xl">
         <CountUp value={value} />
       </p>

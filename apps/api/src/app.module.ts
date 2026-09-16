@@ -14,6 +14,7 @@ import { DashboardsModule } from "./modules/dashboards/dashboards.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { GdprModule } from "./modules/gdpr/gdpr.module";
 import { ProfilesModule } from "./modules/profiles/profiles.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ProfilesModule } from "./modules/profiles/profiles.module";
     DashboardsModule,
     GdprModule,
     AdminModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

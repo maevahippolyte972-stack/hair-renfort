@@ -75,13 +75,13 @@ export default function RechercherPage() {
 
   return (
     <AppShell>
-      <p className="text-sm text-noir-chaud/60">Recherche manuelle</p>
+      <p className="kicker">Recherche manuelle</p>
       <h1 className="font-serif text-3xl">Toutes les freelances</h1>
       <p className="mt-1 text-sm text-noir-chaud/60">
         Disponible avec toutes les formules — filtrez et parcourez la base librement.
       </p>
 
-      <form onSubmit={onSubmit} className="mt-6 space-y-3 rounded-2xl border border-noir-chaud/10 bg-white/50 p-4">
+      <form onSubmit={onSubmit} className="mt-6 space-y-3 editorial-card p-4">
         <select
           name="specialtyName"
           defaultValue=""
@@ -124,7 +124,7 @@ export default function RechercherPage() {
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
         {!loading &&
           results?.map((f) => (
-          <div key={f.id} className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4">
+          <div key={f.id} className="editorial-card p-4">
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-serif text-lg">

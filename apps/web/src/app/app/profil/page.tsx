@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { MissionAlerts } from "@/components/MissionAlerts";
 import { authFetch, clearSession, getRole } from "@/lib/session";
 
 interface SalonMe {
@@ -41,7 +42,7 @@ export default function ProfilPage() {
 
   return (
     <AppShell>
-      <p className="text-sm text-noir-chaud/60">Mon profil</p>
+      <p className="kicker">Mon profil</p>
       <h1 className="font-serif text-3xl">
         {me && "raisonSociale" in me ? me.raisonSociale : me ? `${me.prenom} ${me.nom}` : "…"}
       </h1>
@@ -66,13 +67,13 @@ export default function ProfilPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4">
+          <div className="editorial-card p-4">
             <p className="text-xs text-noir-chaud/60">Taux de fiabilité</p>
             <p className="font-serif text-2xl">{me.reliabilityScore}%</p>
           </div>
 
           {"tarifsAffiches" in me && me.tarifsAffiches?.length > 0 && (
-            <div className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4">
+            <div className="editorial-card p-4">
               <p className="text-xs text-noir-chaud/60">Mes tarifs</p>
               {me.tarifsAffiches.map((t) => (
                 <p key={t.prestation} className="mt-1 text-sm">
@@ -81,6 +82,8 @@ export default function ProfilPage() {
               ))}
             </div>
           )}
+
+          {"tarifsAffiches" in me && <MissionAlerts />}
         </div>
       )}
 

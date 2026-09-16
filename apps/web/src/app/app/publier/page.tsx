@@ -85,14 +85,14 @@ export default function PublierPage() {
 
   return (
     <AppShell>
-      <p className="text-sm text-noir-chaud/60">Nouveau besoin</p>
+      <p className="kicker">Nouveau besoin</p>
       <h1 className="font-serif text-3xl">Publier un renfort</h1>
       <p className="mt-1 text-sm text-noir-chaud/60">
         Aucun tarif à indiquer ici : c&apos;est la freelance qui fixe et affiche le sien.
         L&apos;urgence est calculée automatiquement selon le délai avant la mission.
       </p>
 
-      <form onSubmit={onSubmit} className="mt-6 space-y-4 rounded-2xl border border-noir-chaud/10 bg-white/50 p-4">
+      <form onSubmit={onSubmit} className="mt-6 space-y-4 editorial-card p-4">
         <select
           name="specialtyName"
           required
@@ -173,7 +173,7 @@ export default function PublierPage() {
               initial={{ opacity: 0, y: -8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", stiffness: 380, damping: 32 }}
-              className="rounded-2xl border border-noir-chaud/10 bg-white/50 p-4"
+              className="editorial-card p-4"
             >
               <div className="flex items-center justify-between">
                 <p className="font-serif">{n.specialty.name}</p>
